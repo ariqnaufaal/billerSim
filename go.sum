@@ -1,0 +1,4 @@
+github.com/go-yaml/yaml v2.1.0+incompatible h1:RYi2hDdss1u4YE7GwixGzWwVo47T8UQwnTLB6vQiq+o=
+github.com/go-yaml/yaml v2.1.0+incompatible/go.mod h1:w2MrLa16VYP0jy6N7M5kHaCkaLENm+P+Tv+MfurjSw0=
+github.com/harda/iso8583 v0.0.0-20210304154654-27e0c1c4a872 h1:So25yu5/amCQhCKyrUsqtreOQcSpbCiCe/PoeJNejxM=
+github.com/harda/iso8583 v0.0.0-20210304154654-27e0c1c4a872/go.mod h1:fJRXDRktYWxRypNUonRTOe0yrT3QcDDFcLxpImUaxO8=

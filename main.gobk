@@ -1,0 +1,122 @@
+package main
+
+import (
+	"bufio"
+	"encoding/hex"
+	"fmt"
+	"log"
+	"net"
+	"strconv"
+)
+
+func main() {
+	log.Println("Service started")
+
+	listener, err := net.Listen("tcp", "0.0.0.0:8432")
+	if err != nil {
+		log.Println("Error Listening:", err.Error())
+	}
+	defer listener.Close()
+	log.Println("Listening TCP on 0.0.0.0:8432")
+
+	for {
+		connection, err := listener.Accept()
+		if err != nil {
+			log.Println("Error accepting new connection:", err.Error())
+		}
+		log.Println("New connection detected!")
+		go acceptRequest2(connection)
+	}
+}
+
+func acceptRequest2(connection net.Conn) {
+	for {
+
+		request, err := readMessage(connection)
+		if err != nil {
+			if len(request) < 1 {
+				continue
+			}
+		}
+
+		log.Println("New Request Message (ISO8583):", request)
+
+		response := request
+		sendResponse(connection, response)
+		log.Println("Response successfully received on Teller!")
+	}
+}
+
+func sendResponse(connection net.Conn, response string) {
+	// header := fmt.Sprintf("%04d", len(response))
+
+	_, responseErr := connection.Write([]byte(response))
+	if responseErr != nil {
+		log.Println("Error send Response:", responseErr)
+		return
+	}
+	log.Println("Response Sent:", response)
+}
+
+func readRequest(connection net.Conn) (string, error) {
+	header := make([]byte, 4)
+	reader := bufio.NewReader(connection)
+
+	_, headerErr := reader.Read(header)
+	if headerErr != nil {
+		return "", headerErr
+	}
+
+	headerLen, _ := strconv.Atoi(string(header))
+	log.Println("Header length:", headerLen)
+
+	newRequest := make([]byte, headerLen)
+	_, newRequestErr := reader.Read(newRequest)
+	if newRequestErr != nil {
+		log.Println("Failed reading newRequest:", newRequestErr)
+		return "", newRequestErr
+	}
+
+	requestMsg := string(newRequest)
+	return requestMsg, nil
+}
+
+func readMessage(conn net.Conn) (string, error) {
+
+	reader := bufio.NewReader(conn)
+
+	header := make([]byte, 2)
+
+	_, headerErr := reader.Read(header)
+	if headerErr != nil {
+		return "", headerErr
+	}
+	fmt.Println("header length in byte: ", header)
+
+	len1 := int(header[0])
+	len2 := int(header[1])
+
+	// lenJoin := strings.Join([]string{strconv.Itoa(len1), strconv.Itoa(len2)}, "")
+	len1 <<= 8
+	length := len1 + len2
+	lengthSTR := string(length)
+	log.Printf("Read message with %d length\n", length)
+
+	message := make([]byte, length)
+	_, readErr := reader.Read(message)
+	if readErr != nil {
+		// fmt.Println("failed:", readErr)
+		return "", readErr
+	}
+
+	isomsg := string(message)
+
+	msgStr := hex.EncodeToString([]byte(isomsg))
+	hdr := hex.EncodeToString([]byte(lengthSTR))
+	a := fmt.Sprintf("%04v%v", hdr, msgStr)
+	// fmt.Printf("message with len%04v%v", hdr, msgStr)
+	fmt.Println(a)
+
+	//currently only echo what request wrote
+	return a, nil
+}
